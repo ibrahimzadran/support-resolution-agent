@@ -11,6 +11,12 @@ tool logic alike -- derives from this one constant.
 from datetime import date, timedelta
 from pathlib import Path
 
+try:  # load .env so ANTHROPIC_API_KEY / VOYAGE_API_KEY are picked up automatically
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:  # dotenv is optional; env vars still work without it
+    pass
+
 # Pinned "current date" for the entire system. Do not replace with date.today().
 TODAY = date(2026, 9, 9)
 
