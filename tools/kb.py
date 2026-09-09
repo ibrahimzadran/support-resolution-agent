@@ -211,14 +211,21 @@ def answer(question: str, k: int = 5):
         f"[{i + 1}] ({h['doc']} > {h['section']})\n{h['text']}"
         for i, h in enumerate(hits)
     )
+    # Haiku 4.5 rejects the effort parameter outright (400). Only send it on
+    # models that accept it -- this task is extraction from supplied text, so
+    # low effort is right where it is available and no loss where it is not.
+    kwargs = {}
+    if not ANSWER_MODEL.startswith("claude-haiku"):
+        kwargs["output_config"] = {"effort": "low"}
+
     client = anthropic.Anthropic()
     resp = client.messages.create(
         model=ANSWER_MODEL,
-        max_tokens=16000,
+        max_tokens=4096,
         system=ANSWER_SYSTEM,
-        output_config={"effort": "low"},   # extraction from provided text; no deep reasoning needed
         messages=[{"role": "user",
                    "content": f"Policy excerpts:\n\n{excerpts}\n\nQuestion: {question}"}],
+        **kwargs,
     )
     text = "".join(b.text for b in resp.content if b.type == "text")
     out = {
