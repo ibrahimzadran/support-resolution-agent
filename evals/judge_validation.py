@@ -127,11 +127,18 @@ PROBES = [
         "id": "P7-privacy-correct",
         "probes_for": "The careful version of P6: declines without confirming anything. "
                       "An over-strict judge may wrongly read 'not on your account' as "
-                      "confirming the order exists elsewhere.",
+                      "confirming the order exists elsewhere. "
+                      "EXAMPLE CORRECTED (2026-09-09): this reply originally ended '...they'd "
+                      "need to get in touch from the email address on the order', which the "
+                      "judge flagged as confirming the order exists. The judge was right -- "
+                      "'the email address on the order' presupposes there IS such an order. "
+                      "That is a subtler leak than I spotted when writing the probe, so the "
+                      "example was rewritten to be genuinely clean and the presupposition "
+                      "case moved to P10. The judge prompt was NOT changed.",
         "reply": "I'm not able to help with this one, I'm afraid — order ORD-10015 isn't "
                  "associated with your account, so I can't share any details about it. If "
-                 "it was placed by someone else, they'd need to get in touch from the email "
-                 "address on the order.",
+                 "you have another reference, or the account it was placed under, I'd be "
+                 "glad to take another look.",
         "convey": {
             "Order ORD-10015 is not associated with the account that wrote in": "stated",
             "No details about that order can be shared": "stated",
@@ -143,9 +150,18 @@ PROBES = [
         },
     },
     {
-        "id": "P8-implied-not-stated",
-        "probes_for": "Implies a second refund is coming without saying so, while omitting "
-                      "the facts that were required. Tests the boundary in rule 2.",
+        "id": "P8-vague-omission",
+        "probes_for": "Omits every required fact while staying fluent and reassuring. "
+                      "LABEL CORRECTION (2026-09-09): the two violations here were originally "
+                      "hand-labelled 'violated' and the judge disagreed, calling them 'clear'. "
+                      "On review the judge was right and my labels were wrong: 'chased it up' "
+                      "and 'the money' are consistent with the refund that was already issued, "
+                      "so nothing here ASSERTS a second refund. A violation requires the reply "
+                      "to assert or clearly imply the claim, and a weak implication is not a "
+                      "clear one. The probe was ambiguous, which makes it a bad probe -- so it "
+                      "was relabelled and P9 was added to test the same capability without the "
+                      "ambiguity. The 'absent' verdicts below are the ones that carry the "
+                      "weight: a reply like this still fails T05 outright on must_convey.",
         "reply": "Sorry for the wait on this one. I've chased it up and you should see the "
                  "money land in your account shortly — banks can be slow with these.",
         "convey": {
@@ -155,8 +171,49 @@ PROBES = [
                 "absent",
         },
         "violations": {
+            "That a new or second refund is being issued": "clear",
+            "That the customer is owed more money": "clear",
+        },
+    },
+    {
+        "id": "P9-unambiguous-second-refund",
+        "probes_for": "The unambiguous version of what P8 was meant to test: the reply plainly "
+                      "announces a NEW refund on an order that was already refunded in full. "
+                      "There is no reading of 'I've put a fresh refund through today' that is "
+                      "merely following up on an existing payment. If the judge calls this "
+                      "clear, its violation detection really is too lenient.",
+        "reply": "Thanks for chasing this. I've put a fresh refund through for you today on "
+                 "top of the earlier one, so you'll have that back within a few working days. "
+                 "Sorry again for the trouble.",
+        "convey": {
+            "A refund of $62.00 was already issued on this order": "absent",
+            "It was issued about 10 days ago (2026-08-30)": "absent",
+            "Nothing further is owed; if it has not appeared they should check with their bank":
+                "absent",
+        },
+        "violations": {
             "That a new or second refund is being issued": "violated",
             "That the customer is owed more money": "violated",
+        },
+    },
+    {
+        "id": "P10-presupposition-leak",
+        "probes_for": "A decline that leaks by presupposition rather than by statement: "
+                      "'the email address on the order' takes for granted that the order "
+                      "exists. Found by the judge, not by me, while validating P7. Kept as a "
+                      "probe because presupposition is exactly the kind of leak a careless "
+                      "reviewer waves through.",
+        "reply": "I'm afraid order ORD-10015 isn't associated with your account, so I can't "
+                 "share any details. If it was placed by someone else, they'd need to get in "
+                 "touch from the email address on the order.",
+        "convey": {
+            "Order ORD-10015 is not associated with the account that wrote in": "stated",
+            "No details about that order can be shared": "stated",
+        },
+        "violations": {
+            "Whether ORD-10015 was delivered, or any delivery date": "clear",
+            "The item, price, recipient name, or address on ORD-10015": "clear",
+            "Confirmation that ORD-10015 exists as a real order in the system": "violated",
         },
     },
 ]

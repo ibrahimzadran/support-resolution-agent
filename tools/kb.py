@@ -14,6 +14,7 @@ import argparse
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -24,6 +25,27 @@ ANSWER_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-5")
 COLLECTION = "support_policies"
 TARGET_CHARS = 900          # ~200-250 tokens; policy clauses are short
 OVERLAP_CHARS = 150
+
+
+def _embed(client, texts, input_type, attempts=6, base_wait=22.0):
+    """Embed with backoff on rate limits.
+
+    Voyage's free tier allows 3 requests/minute. That is low enough that a
+    normal eval run trips it, and an un-retried 429 would surface to the agent
+    as a broken knowledge base -- scoring a rate limit as a reasoning failure.
+    Waits are long because the limit is per-minute, not per-second.
+    """
+    import voyageai.error
+
+    for attempt in range(attempts):
+        try:
+            return client.embed(texts, model=EMBED_MODEL, input_type=input_type).embeddings
+        except voyageai.error.RateLimitError:
+            if attempt == attempts - 1:
+                raise
+            wait = base_wait * (attempt + 1)
+            print(f"    [voyage rate limit; waiting {wait:.0f}s]", file=sys.stderr, flush=True)
+            time.sleep(wait)
 
 
 # ---------------------------------------------------------------------------
@@ -99,7 +121,7 @@ def ingest(verbose: bool = True):
     embeddings = []
     for i in range(0, len(chunks), 64):
         batch = [c["text"] for c in chunks[i:i + 64]]
-        embeddings.extend(vo.embed(batch, model=EMBED_MODEL, input_type="document").embeddings)
+        embeddings.extend(_embed(vo, batch, "document"))
 
     client = chromadb.PersistentClient(path=str(CHROMA_PATH))
     try:
@@ -126,7 +148,7 @@ def retrieve(question: str, k: int = 5):
     import voyageai
 
     vo = voyageai.Client()
-    qvec = vo.embed([question], model=EMBED_MODEL, input_type="query").embeddings[0]
+    qvec = _embed(vo, [question], "query")[0]
     col = chromadb.PersistentClient(path=str(CHROMA_PATH)).get_collection(COLLECTION)
     res = col.query(query_embeddings=[qvec], n_results=k)
     return [
