@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+backend/support.db
+evals/.chroma/
+evals/runs/
