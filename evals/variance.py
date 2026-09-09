@@ -23,7 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from backend.config import REPO_ROOT  # noqa: E402
-from evals.grade import check_deterministic  # noqa: E402
+from evals.grade import check_deterministic, validate_run  # noqa: E402
 
 DIMS = ["tool_sequence", "no_forbidden_tools", "terminal_state",
         "escalation_category", "refund_correct"]
@@ -51,14 +51,33 @@ def main():
     gt = json.loads((REPO_ROOT / "evals" / "ground_truth.json").read_text())
     cases = {c["ticket_id"]: c for c in gt["cases"]}
 
-    all_runs = []
+    all_runs, discarded = [], []
     for path in args.reuse:
-        all_runs.append(json.loads(Path(path).read_text()))
-        print(f"reusing {path}", flush=True)
-    for i in range(len(all_runs), args.seeds):
+        try:
+            all_runs.append(validate_run(json.loads(Path(path).read_text()), path))
+            print(f"reusing {path}", flush=True)
+        except RuntimeError as e:
+            discarded.append(str(e)); print(f"DISCARDED {e}", flush=True)
+    for i in range(len(all_runs) + len(discarded), args.seeds):
         out = runs_dir / f"seed{i + 1}.json"
         print(f"running seed {i + 1}/{args.seeds} ...", flush=True)
-        all_runs.append(run_once(out))
+        try:
+            all_runs.append(validate_run(run_once(out), str(out)))
+        except RuntimeError as e:
+            discarded.append(str(e))
+            print(f"DISCARDED {e}", flush=True)
+            print("Stopping: infrastructure is failing, so further seeds would "
+                  "measure the outage, not the agent.", flush=True)
+            break
+
+    if discarded:
+        print(f"\n!! {len(discarded)} seed(s) discarded as invalid.", flush=True)
+    if not all_runs:
+        raise SystemExit("No valid seeds. Nothing to report.")
+    if len(all_runs) < 3:
+        print(f"\n!! Only {len(all_runs)} valid seed(s). Treat the numbers below as "
+              "indicative, not a variance measurement -- 3 is the practical minimum.",
+              flush=True)
 
     # per ticket -> per dimension -> list of bools
     stats = defaultdict(lambda: defaultdict(list))

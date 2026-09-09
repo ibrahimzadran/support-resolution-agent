@@ -172,6 +172,26 @@ def check_deterministic(case, record):
     }
 
 
+def validate_run(run, source=""):
+    """Refuse to score a run whose failures are infrastructure, not behaviour.
+
+    An out-of-credit 400 or a rate limit produces tickets with no actions and no
+    terminal state, which score identically to an agent that did nothing. That
+    silently converts a billing problem into a capability measurement -- the
+    exact class of error this project exists to avoid. Better to refuse to
+    produce a number than to produce a wrong one.
+    """
+    errored = [r["ticket_id"] for r in run if r.get("error")]
+    if errored:
+        detail = next(r["error"] for r in run if r.get("error"))
+        raise RuntimeError(
+            f"{source or 'run'} contains {len(errored)} ticket(s) that failed for "
+            f"infrastructure reasons ({', '.join(errored)}). Refusing to score it.\n"
+            f"  first error: {detail[:200]}"
+        )
+    return run
+
+
 def customer_reply(record):
     """The text the customer actually receives, whichever terminal tool produced it."""
     for action in reversed(record["actions"]):
@@ -227,7 +247,9 @@ def main():
 
     gt = json.loads((REPO_ROOT / "evals" / "ground_truth.json").read_text())
     cases = {c["ticket_id"]: c for c in gt["cases"]}
-    records = {r["ticket_id"]: r for r in json.loads(Path(args.run).read_text())}
+    raw = json.loads(Path(args.run).read_text())
+    validate_run(raw, source=args.run)
+    records = {r["ticket_id"]: r for r in raw}
 
     results = []
     for tid, case in cases.items():
