@@ -131,7 +131,15 @@ TOOLS = [
                 "reason": {
                     "type": "string",
                     "description": "What the human reviewer needs to know: what the customer "
-                                   "wants, what you found, and why this needs a person.",
+                                   "wants, what you found, and why this needs a person. "
+                                   "Internal — the customer does not see this.",
+                },
+                "customer_message": {
+                    "type": "string",
+                    "description": "The reply the customer receives now. Write it to them "
+                                   "directly: what you found, that a colleague is taking it on, "
+                                   "and what happens next. Escalating does not excuse leaving "
+                                   "them without an answer.",
                 },
                 "category": {
                     "type": "string",
@@ -142,7 +150,7 @@ TOOLS = [
                 },
                 "order_id": {"type": "string", "description": "Related order, if there is one."},
             },
-            "required": ["reason", "category"],
+            "required": ["reason", "category", "customer_message"],
         },
     },
     {
@@ -192,7 +200,8 @@ def dispatch(ctx, name: str, args: dict) -> dict:
                 ctx, args["requester_email"], args["order_id"], args["amount"], args["reason"])
         if name == "escalate_to_human":
             return db_tools.escalate_to_human(
-                ctx, args["reason"], args["category"], args.get("order_id"))
+                ctx, args["reason"], args["category"], args["customer_message"],
+                args.get("order_id"))
         if name == "close_ticket":
             return db_tools.close_ticket(ctx, args["resolution"], args.get("outcome", "resolved"))
         return {"error": "unknown_tool", "message": f"No tool named {name}."}

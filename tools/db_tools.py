@@ -261,9 +261,16 @@ def issue_refund(ctx: ToolContext, requester_email: str, order_id: str,
 # Tool 4: escalate_to_human
 # ---------------------------------------------------------------------------
 def escalate_to_human(ctx: ToolContext, reason: str, category: str,
-                      order_id: str | None = None) -> dict:
-    """Hand the ticket to a human reviewer. Terminal."""
-    args = {"reason": reason, "category": category, "order_id": order_id}
+                      customer_message: str, order_id: str | None = None) -> dict:
+    """Hand the ticket to a human reviewer. Terminal.
+
+    `customer_message` exists because escalating is not the same as going
+    silent: the person who wrote in still needs an answer today, even when the
+    decision belongs to someone else. Without it an escalated ticket produces
+    no customer-facing reply at all.
+    """
+    args = {"reason": reason, "category": category, "order_id": order_id,
+            "customer_message": customer_message}
     valid = {"fraud", "over_authority", "warranty", "lost_package", "refund_history",
              "account_status", "policy_exception", "identity", "billing", "other"}
     if category not in valid:
