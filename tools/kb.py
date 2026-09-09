@@ -21,10 +21,29 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from backend.config import CHROMA_PATH, DOCS_PATH  # noqa: E402
 
 EMBED_MODEL = os.environ.get("VOYAGE_MODEL", "voyage-3")
-ANSWER_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-5")
+ANSWER_MODEL = os.environ.get("KB_MODEL", "claude-haiku-4-5")
 COLLECTION = "support_policies"
 TARGET_CHARS = 900          # ~200-250 tokens; policy clauses are short
 OVERLAP_CHARS = 150
+
+
+_QUERY_CACHE: dict[str, dict] = {}   # question -> full answer payload
+_LAST_CALL = [0.0]                   # module-level clock for proactive pacing
+MIN_INTERVAL_S = 21.0                # free tier is 3 requests/minute
+
+
+def _pace():
+    """Wait out the free-tier rate limit BEFORE calling, not after being refused.
+
+    Reacting to 429s is not enough here: the agent retries a failed tool call,
+    so one rate limit turns into several, and the agent eventually concludes the
+    knowledge base is broken. That scores an infrastructure limit as a reasoning
+    failure. Spacing calls proactively keeps the tool honest.
+    """
+    elapsed = time.monotonic() - _LAST_CALL[0]
+    if _LAST_CALL[0] and elapsed < MIN_INTERVAL_S:
+        time.sleep(MIN_INTERVAL_S - elapsed)
+    _LAST_CALL[0] = time.monotonic()
 
 
 def _embed(client, texts, input_type, attempts=6, base_wait=22.0):
@@ -39,6 +58,7 @@ def _embed(client, texts, input_type, attempts=6, base_wait=22.0):
 
     for attempt in range(attempts):
         try:
+            _pace()
             return client.embed(texts, model=EMBED_MODEL, input_type=input_type).embeddings
         except voyageai.error.RateLimitError:
             if attempt == attempts - 1:
@@ -171,8 +191,17 @@ the only authority, and guessing produces confidently wrong support answers.
 
 
 def answer(question: str, k: int = 5):
-    """Retrieve and produce a cited answer. Returns dict with answer + sources."""
+    """Retrieve and produce a cited answer. Returns dict with answer + sources.
+
+    Answers are cached by question text. Agents commonly re-ask a question
+    verbatim after a transient tool error; without a cache that doubles the
+    embedding spend and can re-trip the rate limit that caused the retry.
+    """
     import anthropic
+
+    cache_key = f"{question}|{k}"
+    if cache_key in _QUERY_CACHE:
+        return _QUERY_CACHE[cache_key]
 
     hits = retrieve(question, k=k)
     if not hits:
@@ -192,11 +221,13 @@ def answer(question: str, k: int = 5):
                    "content": f"Policy excerpts:\n\n{excerpts}\n\nQuestion: {question}"}],
     )
     text = "".join(b.text for b in resp.content if b.type == "text")
-    return {
+    out = {
         "answer": text,
         "sources": [{"n": i + 1, "doc": h["doc"], "section": h["section"],
                      "source": h["source"]} for i, h in enumerate(hits)],
     }
+    _QUERY_CACHE[cache_key] = out
+    return out
 
 
 if __name__ == "__main__":

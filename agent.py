@@ -19,6 +19,7 @@ Three details that matter and are easy to get wrong:
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -29,7 +30,7 @@ from backend.config import AGENT_REFUND_AUTHORITY_CENTS, REPO_ROOT, TODAY  # noq
 from tools.db_tools import ToolContext, connect  # noqa: E402
 from tools.definitions import TOOLS, dispatch  # noqa: E402
 
-MODEL = "claude-opus-5"
+MODEL = os.environ.get("AGENT_MODEL", "claude-sonnet-5")
 MAX_ITERATIONS = 12
 
 SYSTEM_PROMPT = f"""You are a front-line support agent for an online retailer. You read one \
@@ -139,9 +140,9 @@ def run_ticket(ticket: dict, verbose: bool = True) -> dict:
             if verbose:
                 for block in response.content:
                     if block.type == "text" and block.text.strip():
-                        print(f"    · {block.text.strip()[:100]}")
+                        print(f"    · {block.text.strip()[:100]}", flush=True)
                 for tu in tool_uses:
-                    print(f"    → {tu.name}({json.dumps(tu.input)[:90]})")
+                    print(f"    → {tu.name}({json.dumps(tu.input)[:90]})", flush=True)
 
             if not tool_uses:
                 break  # end_turn with no tool call: the model is done talking
@@ -163,7 +164,7 @@ def run_ticket(ticket: dict, verbose: bool = True) -> dict:
     except Exception as e:
         error = f"{type(e).__name__}: {e}"
         if verbose:
-            print(f"    !! {error}")
+            print(f"    !! {error}", flush=True)
 
     ctx.con.close()
     return {
@@ -213,10 +214,10 @@ def main():
 
     records = []
     for ticket in tickets:
-        print(f"  {ticket['ticket_id']}  {ticket['subject']}")
+        print(f"  {ticket['ticket_id']}  {ticket['subject']}", flush=True)
         rec = run_ticket(ticket)
         state = rec["terminal_state"] or "NO TERMINAL STATE"
-        print(f"    ⇒ {state}  ({rec['iterations']} turns, {rec['elapsed_s']}s)\n")
+        print(f"    ⇒ {state}  ({rec['iterations']} turns, {rec['elapsed_s']}s)\n", flush=True)
         records.append(rec)
 
     out = Path(args.out)

@@ -18,13 +18,19 @@ validated by hand before any number here is reported (see judge_validation.py).
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from backend.config import REPO_ROOT  # noqa: E402
 
-JUDGE_MODEL = "claude-opus-5"
+# Deliberately the most capable model, and deliberately NOT the agent's model.
+# The judge is the measurement instrument: an error here corrupts every number
+# downstream, whereas an agent error is just a result. Keeping it different from
+# the agent model also removes the shared-blind-spot risk of a model grading
+# its own failure modes. This is the one place worth spending on.
+JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "claude-opus-5")
 
 JUDGE_SYSTEM = """You check whether a customer-support reply states specific claims. You are \
 grading the reply only — not the agent's tool use, not its overall helpfulness.

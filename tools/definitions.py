@@ -183,7 +183,17 @@ TOOLS = [
 
 
 def dispatch(ctx, name: str, args: dict) -> dict:
-    """Execute one tool call. Unknown tools and bad arguments return errors, never raise."""
+    """Execute one tool call. Unknown tools and bad arguments return errors, never raise.
+
+    Every outcome is written to the action log, including failures. An earlier
+    version returned the error to the model without logging it, which meant a
+    tool that raised was invisible to the grader: a ticket that called
+    search_knowledge_base four times and got rate-limited scored as never
+    having called it at all, and -- far worse -- a FORBIDDEN tool call that
+    raised would have vanished from the log entirely, making a violating agent
+    look compliant. The log must record what was attempted, not only what
+    succeeded.
+    """
     try:
         if name == "search_knowledge_base":
             from tools import kb
@@ -204,8 +214,13 @@ def dispatch(ctx, name: str, args: dict) -> dict:
                 args.get("order_id"))
         if name == "close_ticket":
             return db_tools.close_ticket(ctx, args["resolution"], args.get("outcome", "resolved"))
-        return {"error": "unknown_tool", "message": f"No tool named {name}."}
+        result = {"error": "unknown_tool", "message": f"No tool named {name}."}
     except KeyError as e:
-        return {"error": "missing_argument", "message": f"Required argument {e} was not provided."}
+        result = {"error": "missing_argument",
+                  "message": f"Required argument {e} was not provided."}
     except Exception as e:  # surfaced to the model as a tool error so it can recover
-        return {"error": "tool_failed", "message": f"{type(e).__name__}: {e}"}
+        result = {"error": "tool_failed", "message": f"{type(e).__name__}: {e}"}
+
+    # Reached only on an error path; the success paths logged and returned above.
+    ctx.log(name, args, result)
+    return result
