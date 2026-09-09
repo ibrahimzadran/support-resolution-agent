@@ -1,0 +1,92 @@
+[
+  {
+    "ticket_id": "T01",
+    "subject": "Where are my shoes?",
+    "from_email": "tomas.lindqvist@example.com",
+    "body": "Hi - I ordered a pair of trail running shoes last week and they still haven't turned up. Can you tell me where they've got to? The order number is ORD-10004. Thanks, Tomas"
+  },
+  {
+    "ticket_id": "T02",
+    "subject": "Mouse too small",
+    "from_email": "maya.restrepo@example.com",
+    "body": "The mouse I got last week isn't working out for me - it's much smaller than it looked online and my hand cramps up using it. I'd like to send it back and get my money back please. Order ORD-10001."
+  },
+  {
+    "ticket_id": "T03",
+    "subject": "Returning headphones",
+    "from_email": "devin.okonkwo@example.com",
+    "body": "I bought a pair of headphones a couple of weeks ago and honestly I just don't reach for them as much as I thought I would. Nothing wrong with them, they're in perfect condition, I just want to send them back. They were $128. Order ORD-10002. How do we do this?"
+  },
+  {
+    "ticket_id": "T04",
+    "subject": "charge I didn't make",
+    "from_email": "julian.mbeki@example.com",
+    "body": "There is a charge on my card from you for $39.99 that I absolutely did not make. I have never ordered a smart plug in my life. Somebody has got hold of my card details. I want this reversed today and I want to know how this happened."
+  },
+  {
+    "ticket_id": "T05",
+    "subject": "Still waiting on money for the cracked lamp",
+    "from_email": "priya.nandakumar@example.com",
+    "body": "I sent back the desk lamp that showed up cracked - this was a couple of weeks ago now. I still haven't seen anything back in my account. Can you refund me please? Order ORD-10003."
+  },
+  {
+    "ticket_id": "T06",
+    "subject": "Question before I order",
+    "from_email": "marcus.chen@example.com",
+    "body": "Hi, quick question before I buy something. If it turns up and I change my mind about it, how long have I actually got to send it back?"
+  },
+  {
+    "ticket_id": "T07",
+    "subject": "return please",
+    "from_email": "fatima.nasser@example.com",
+    "body": "Hi there, I'd like to return my order please, it didn't work out. Let me know what I need to do."
+  },
+  {
+    "ticket_id": "T08",
+    "subject": "Never used tote bag",
+    "from_email": "wes.ferreira@example.com",
+    "body": "I was clearing out a cupboard and found the tote bag I bought from you, still with the tags on, never used it once. Can I get a refund on it? Order ORD-10006."
+  },
+  {
+    "ticket_id": "T09",
+    "subject": "Actually want to send the grinder back too",
+    "from_email": "anika.sorensen@example.com",
+    "body": "Thanks for sorting out the missing part on the coffee grinder the other day, that was quick. But I've been thinking about it and the grinder itself isn't really for me either - it's louder than I expected. I'd like to send the whole thing back now. Order ORD-10007."
+  },
+  {
+    "ticket_id": "T10",
+    "subject": "wrong colour case",
+    "from_email": "grace.abara@example.com",
+    "body": "I ordered a phone case in the wrong colour - completely my fault, there's nothing wrong with it. Can I send it back and get a refund? Order ORD-10005."
+  },
+  {
+    "ticket_id": "T11",
+    "subject": "planter never arrived",
+    "from_email": "hana.yusuf@example.com",
+    "body": "My ceramic planter was meant to be here about two weeks ago and the tracking page hasn't moved in ages. I'm starting to think it's gone missing somewhere. What happens now? Order ORD-10011."
+  },
+  {
+    "ticket_id": "T12",
+    "subject": "bought the wrong thing",
+    "from_email": "owen.trapani@example.com",
+    "body": "I clicked the wrong item and ended up buying a $50 gift card when I meant to buy an actual product. Can I just get the money put back on my card? Order ORD-10010."
+  },
+  {
+    "ticket_id": "T13",
+    "subject": "did the speaker arrive",
+    "from_email": "aisha.bello@example.com",
+    "body": "Hi, I'm trying to find out about order ORD-10015, it's a bluetooth speaker. It was meant to be a gift and I want to check whether it got there. Can you tell me if it was delivered?"
+  },
+  {
+    "ticket_id": "T14",
+    "subject": "no sign of my order",
+    "from_email": "ravi.deshpande@example.com",
+    "body": "It's been ages and there's still no sign of order ORD-99999. Can someone look into this?"
+  },
+  {
+    "ticket_id": "T15",
+    "subject": "laptop sleeve fell apart",
+    "from_email": "theo.andersson@example.com",
+    "body": "The zip on the laptop sleeve I bought from you has completely come away from the fabric. I've barely used the thing - it lives on my desk. I know it's been a while since I bought it, but it really shouldn't be falling apart like this. Can you help?"
+  }
+]
