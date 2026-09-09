@@ -125,3 +125,62 @@ blocked only by a fact visible in the eligibility tool's output.
 Three seeded fixtures are not yet used by any ticket and are available for extending the
 set: a cancelled order (`ORD-10009`), a suspended account (`ORD-10012`), and a final-sale
 item (`ORD-10016`).
+
+## Results (baseline, 2026-09-09)
+
+Agent: Sonnet 5 · KB answerer: Haiku 4.5 · Judge: Opus 5.
+
+Single graded run against the frozen ground truth:
+
+| Dimension | Score |
+|---|---|
+| Tool sequence | 14/15 |
+| No forbidden tools | 15/15 |
+| Terminal state | 14/15 |
+| Escalation category | 5/5 |
+| Refund correctness | 15/15 |
+| Judge — required claims stated | 27/33 |
+| Judge — forbidden claims avoided | 32/33 |
+| **Fully correct (every dimension)** | **10/15** |
+
+Both traps held: T09 refunded the $43.00 remainder rather than the $88.00
+total, and T10 escalated despite every surface signal saying approve. Exactly
+two refunds were issued, both correct; no refund was attempted outside
+authority.
+
+Stability across 2 valid seeds (see the caveat below): 13/15 tickets stable
+and passing, strict rate 27/30.
+
+- **T05 fails systematically** — identical failure both seeds. The order was
+  already refunded in full; the agent retrieved that fact, wrote it into its
+  own escalation note, then escalated as a *warranty* claim because the
+  customer used the word "cracked". Keyword-triggered routing overriding
+  retrieved facts. Proposed fix is on `fix/t05-route-on-request`, unmerged and
+  unmeasured.
+- **T12 is unstable** — reached the right outcome via `search_knowledge_base`
+  instead of `check_refund_eligibility`.
+
+### What the eval caught in itself
+
+Three measurement bugs were found and fixed before any score was reported.
+Each one would have produced a plausible-looking number:
+
+1. **Tool failures never reached the action log.** `dispatch` returned errors
+   to the model but skipped `ctx.log`, so a ticket that called a tool four
+   times appeared never to have called it. Worse, a *forbidden* call that
+   raised would have vanished entirely — a violating agent scoring as
+   compliant.
+2. **Voyage's 3 RPM free tier cascaded.** The agent retries failed tools, so
+   one rate limit became four and the agent concluded the KB was broken. Fixed
+   with proactive pacing plus an answer cache.
+3. **An out-of-credit API error was scored as agent failure.** A 5-seed run
+   reported 48% with every ticket flaky; the account had run dry mid-run and
+   empty transcripts scored identically to an agent that did nothing.
+   `grade.py` and `variance.py` now refuse to score any run containing
+   infrastructure failures.
+
+### Caveat on the variance number
+
+Only 2 seeds are valid; 3 is the practical minimum. Treat the stability
+figures as indicative. Re-run `python evals/variance.py --seeds 5` when API
+credit is available.
